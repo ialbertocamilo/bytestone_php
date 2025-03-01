@@ -1,0 +1,28 @@
+services:
+  hyper-event-app:
+    container_name: hyper-event-app
+    image: hyperf-skeleton
+    build:
+      context: .
+    volumes:
+      - ./:/opt/www
+    ports:
+      - 9501:9501
+    environment:
+      - APP_ENV=dev
+      - SCAN_CACHEABLE=false
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
+    command: [ "php", "bin/hyperf.php", "start" ]
+
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - 6379:6379
+networks:
+  default:
+    name: hyperf-skeleton
