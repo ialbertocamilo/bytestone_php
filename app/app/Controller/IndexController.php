@@ -27,20 +27,8 @@ class IndexController extends AbstractController
     public function home()
     {
 
-        try {
-            \Hyperf\Coroutine\go(function () {
-                sleep(100);
-                echo 'Gaaa';
-            });
-            \Hyperf\Coroutine\go(function () {
-                sleep(100);
-                echo 'aeaeaea';
-            });
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
         return [
-            'message' => 'GAAAA'
+            'message' => 'hola awd '
         ];
     }
 

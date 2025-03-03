@@ -1,19 +1,20 @@
 services:
-  hyper-event-app:
-    container_name: hyper-event-app
-    image: hyperf-skeleton
-    build:
-      context: .
+  hyperf:
+    build: .
+    container_name: hyperf_app
+    working_dir: /opt/www
     volumes:
-      - ./:/opt/www
-      - ./app:/opt/www/app
+      - .:/opt/www
     ports:
-      - 9501:9501
+      - "9501:9501"
+    command: ["sh", "-c", "composer install && php /opt/www/bin/hyperf.php server:watch"]
     environment:
       - APP_ENV=dev
       - SCAN_CACHEABLE=false
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - TIMEZONE=UTC
+    # command: sh -c "composer install && php bin/hyperf.php start"
     depends_on:
       - redis
 

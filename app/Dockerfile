@@ -1,53 +1,49 @@
-# Default Dockerfile
-#
-# @link     https://www.hyperf.io
-# @document https://hyperf.wiki
-# @contact  group@hyperf.io
-# @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
-
 FROM hyperf/hyperf:8.3-alpine-v3.19-swoole
-LABEL maintainer="Hyperf Developers <group@hyperf.io>" version="1.0" license="MIT" app.name="Hyperf"
 
-##
-# ---------- env settings ----------
-##
-ARG timezone
+LABEL maintainer="Hyperf Developers <group@hyperf.io>" \
+    version="1.0" \
+    license="MIT" \
+    app.name="Hyperf"
 
-ENV TIMEZONE=${timezone:-"UTC"} \
+ARG timezone=UTC
+
+ENV TIMEZONE=${timezone} \
     APP_ENV=dev \
-    SCAN_CACHEABLE=(true)
+    SCAN_CACHEABLE=true
 
-# update
+
 RUN set -ex \
-    # show php version and extensions
-    && php -v \
-    && php -m \
-    && php --ri swoole \
-    #  ---------- some config ----------
+    # Install base dependencies
+    && apk add --no-cache bash git unzip curl libpng-dev libjpeg-turbo-dev freetype-dev \
+    # Install build dependencies
+    && apk add --no-cache $PHPIZE_DEPS openssl-dev \
+    && apk add --no-cache php83-pecl-mongodb php83-dev \
+    # Configure PHP
     && cd /etc/php* \
-    # - config PHP
     && { \
-        echo "upload_max_filesize=1G"; \
-        echo "post_max_size=700M"; \
-        echo "memory_limit=2G"; \
-        echo "date.timezone=${TIMEZONE}"; \
-    } | tee conf.d/99_overrides.ini \
-    # - config timezone
+        echo "extension=mongodb.so"; \
+    } | tee conf.d/00-extensions.ini \
+    # Set timezone
     && ln -sf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime \
     && echo "${TIMEZONE}" > /etc/timezone \
-    # ---------- clear works ----------
-    && rm -rf /var/cache/apk/* /tmp/* /usr/share/man \
-    && echo -e "\033[42;37m Build Completed :).\033[0m\n"
+    # Install composer
+    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
+    # Cleanup
+    && rm -rf /var/cache/apk/* /tmp/* /usr/share/man
 
 WORKDIR /opt/www
-# Composer Cache
-COPY ./composer.* /opt/www/
-#RUN composer install --no-dev --no-scripts
-COPY . /opt/www
-RUN composer install
-RUN php composer.json
-RUN php /opt/www/bin/hyperf.php
+
+COPY composer.* ./
+
+RUN composer install --no-scripts --no-interaction --prefer-dist \
+    && composer dump-autoload -o \
+    && chmod -R 777 vendor/
+
+COPY . .
+
+RUN mkdir -p runtime/container \
+    && chmod -R 777 runtime/
 
 EXPOSE 9501
 
-ENTRYPOINT ["php", "/opt/www/bin/hyperf.php", "server:watch"]
+ENTRYPOINT php /opt/www/bin/hyperf.php server:watch
