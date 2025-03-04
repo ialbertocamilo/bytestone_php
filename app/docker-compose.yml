@@ -14,6 +14,7 @@ services:
       - WATCH_DIR=${WATCH_DIR:-app,config}
       - WATCH_EXT=${WATCH_EXT:-php,env}
       - WATCH_DELAY=${WATCH_DELAY:-0.5}
+      - REDIS_HOST=redis
     volumes:
       - ${APP_CODE_PATH_HOST:-./}:${APP_CODE_PATH_CONTAINER:-/var/www/html}:${APP_CODE_CONTAINER_FLAG:-cached}
       - ./storage/logs:/var/www/html/runtime/logs

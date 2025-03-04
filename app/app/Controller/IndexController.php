@@ -31,6 +31,7 @@ class IndexController extends AbstractController
     public function home()
     {
         $parallel=new Parallel();
+        $parallel->add();
         Coroutine::create(function (){
             go(function() {
                 echo "Mensaje 1";

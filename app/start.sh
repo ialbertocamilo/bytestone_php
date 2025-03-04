@@ -1,7 +1,5 @@
 #!/bin/bash
-
-set -e  # Detiene la ejecución si hay un error
-
+set -e
 if [ "$WATCH_ENABLE" = "true" ]; then
     echo "Starting Hyperf in watch mode (hot reload enabled)..."
     composer install 

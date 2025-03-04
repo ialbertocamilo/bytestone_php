@@ -13,7 +13,7 @@ use function Hyperf\Support\env;
 
 return [
     'default' => [
-        'host' => env('REDIS_HOST', '127.0.0.1'),
+        'host' => env('REDIS_HOST', 'redis'),
         'port' => (int) env('REDIS_PORT', 6379),
         'auth' => env('REDIS_AUTH', null),
         'db' => (int) env('REDIS_DB', 0),
