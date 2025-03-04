@@ -1,23 +1,44 @@
 services:
   hyperf:
-    build: .
+    build:
+      context: .
+      dockerfile: ${DOCKERFILE:-Dockerfile}
+      args:
+        BUILD_ENV: ${APP_ENV:-prod}
     container_name: hyperf_app
-    working_dir: /opt/www
-    volumes:
-      - .:/opt/www
-    ports:
-      - "9501:9501"
-    command: ["sh", "-c", "composer install && php /opt/www/bin/hyperf.php server:watch"]
+    restart: ${RESTART_POLICY:-unless-stopped}
     environment:
-      - APP_ENV=dev
-      - SCAN_CACHEABLE=false
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - TIMEZONE=UTC
-    # command: sh -c "composer install && php bin/hyperf.php start"
+      - APP_ENV=${APP_ENV:-prod}
+      - SCAN_CACHEABLE=${SCAN_CACHEABLE:-true}
+      - WATCH_ENABLE=${WATCH_ENABLE:-false}
+      - WATCH_DIR=${WATCH_DIR:-app,config}
+      - WATCH_EXT=${WATCH_EXT:-php,env}
+      - WATCH_DELAY=${WATCH_DELAY:-0.5}
+    volumes:
+      - ${APP_CODE_PATH_HOST:-./}:${APP_CODE_PATH_CONTAINER:-/var/www/html}:${APP_CODE_CONTAINER_FLAG:-cached}
+      - ./storage/logs:/var/www/html/runtime/logs
+      - ./vendor:/var/www/html/vendor:cached
+    ports:
+      - "${APP_PORT:-9501}:9501"
     depends_on:
+      - mysql
       - redis
-
+    command: ${HYPERF_COMMAND:-php bin/hyperf.php start}
+    tty: ${TTY_ENABLE:-false}
+  mysql:
+    image: mysql:8.0
+    container_name: hyperf_mysql
+    restart: ${RESTART_POLICY:-unless-stopped}
+    environment:
+      - MYSQL_DATABASE=${DB_DATABASE:-hyperf}
+      - MYSQL_USER=${DB_USERNAME:-hyperf}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-secret}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
+    volumes:
+      - ${DATA_PATH_HOST:-./mysql}:/var/lib/mysql
+      - ./docker/mysql/conf.d:/etc/mysql/conf.d
+    ports:
+      - "${DB_PORT:-3306}:3306"
 
   redis:
     image: redis:alpine
@@ -26,4 +47,4 @@ services:
       - 6379:6379
 networks:
   default:
-    name: hyperf-skeleton
+    name: hyperf

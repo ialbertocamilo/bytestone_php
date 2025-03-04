@@ -1,0 +1,111 @@
+FROM hyperf/hyperf:8.3-alpine-vedge-swoole-slim-v6.0.1
+LABEL maintainer="info@hyperf.io" version="1.0"
+
+ARG BUILD_ENV=dev
+
+# Actualizar mirrors
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+
+# Instalar paquetes del sistema y PHP
+RUN apk update && apk add --no-cache \
+    bash \
+    curl \
+    wget \
+    git \
+    zip \
+    libzip-dev \
+    openssh-client \
+    unzip \
+    vim \
+    inotify-tools \
+    procps \
+    linux-headers \
+    php82-dev \
+    php82-cli \
+    php82-common \
+    php82-mbstring \
+    php82-opcache \
+    php82-tokenizer \
+    php82-xml \
+    php82-bcmath \
+    php82-ctype \
+    php82-fileinfo \
+    php82-posix \
+    php82-session \
+    php82-simplexml \
+    php82-json \
+    php82-curl \
+    php82-openssl \
+    php82-dom \
+    php82-pdo_mysql \
+    php82-pcntl \
+    php82-zip
+
+RUN php --ini
+RUN mkdir -p /etc/php/conf.d && \
+    { \
+        echo "upload_max_filesize=128M"; \
+        echo "post_max_size=128M"; \
+        echo "memory_limit=1G"; \
+        echo "date.timezone=${TIMEZONE:-UTC}"; \
+    } | tee /etc/php82/conf.d/99-overrides.ini
+
+# # Instalar Xdebug en entorno de desarrollo
+# RUN if [ "$BUILD_ENV" = "dev" ]; then \
+#         apk add --no-cache $PHPIZE_DEPS \
+#         && pecl install xdebug-3.1.6 \
+#         && docker-php-ext-enable xdebug \
+#         && rm -rf /tmp/*; \
+#     fi
+# # Configuración de Xdebug
+# RUN if [ "$BUILD_ENV" = "dev" ]; then \
+#     cd /usr/local/etc/php/conf.d/ && \
+#     { \
+#         echo "xdebug.mode=develop,debug"; \
+#         echo "xdebug.client_host=host.docker.internal"; \
+#         echo "xdebug.client_port=9003"; \
+#         echo "xdebug.idekey=PHPSTORM"; \
+#         echo "xdebug.start_with_request=yes"; \
+#     } | tee docker-php-ext-xdebug.ini; \
+#     fi
+
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV COMPOSER_MEMORY_LIMIT=-1
+ENV COMPOSER_HOME=/tmp/composer
+
+# Definir directorio de trabajo
+WORKDIR /var/www/html
+
+# Instalar dependencias con Composer
+COPY ./composer.* ./
+RUN if [ "$BUILD_ENV" = "dev" ]; then \
+        composer install --ansi --prefer-dist; \
+    else \
+        composer install --no-dev --no-scripts --no-autoloader --ansi --prefer-dist; \
+    fi
+
+# Instalar Hyperf Watcher (solo en desarrollo)
+RUN if [ "$BUILD_ENV" = "dev" ]; then \
+        composer require hyperf/watcher --dev; \
+    fi
+
+# Copy application files
+COPY . .
+
+# Set proper permissions
+RUN chmod +x /var/www/html/bin/hyperf.php
+# RUN chmod +x /var/www/html/start.sh
+
+# Generate optimized autoloader and install dependencies
+RUN if [ "$BUILD_ENV" = "dev" ]; then \
+        composer dump-autoload --optimize; \
+    else \
+        composer dump-autoload --optimize --no-dev; \
+    fi
+
+RUN chmod -R 777 /var/www/html/vendor
+
+EXPOSE 9501
+
+ENTRYPOINT ["bash","start.sh"]

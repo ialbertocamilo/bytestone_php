@@ -1,0 +1,9 @@
+runtime
+app/storage/*
+app/vendor
+app/.idea
+.idea
+app/mysql/*
+.env
+app/docker
+app/node_modules

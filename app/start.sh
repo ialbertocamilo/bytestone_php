@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# Determinar si se debe usar el modo watch (hot reload)
+set -e  # Detiene la ejecución si hay un error
+
 if [ "$WATCH_ENABLE" = "true" ]; then
     echo "Starting Hyperf in watch mode (hot reload enabled)..."
-    cd /var/www/html
-    php bin/hyperf.php watcher:start
+    composer install 
+    exec php bin/hyperf.php server:watch
 else
     echo "Starting Hyperf in normal mode..."
-    cd /var/www/html
-    php bin/hyperf.php start
+    composer install 
+    exec php bin/hyperf.php start
 fi
