@@ -30,11 +30,10 @@ class IndexController extends AbstractController
 //    #[GetMapping(path: '/home')]
     public function home()
     {
-        $parallel=new Parallel();
-        $parallel->add();
+
         Coroutine::create(function (){
             go(function() {
-                echo "Mensaje 1";
+                echo "Mensajedwd 1";
             });
             go(function() {
                 echo "Mensajito 2";
@@ -42,7 +41,7 @@ class IndexController extends AbstractController
         });
 
         return [
-            'message' => 'hola awd '
+            'message' => 'hola awdwdw '
         ];
     }
 

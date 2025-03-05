@@ -1,5 +1,7 @@
 services:
   hyperf:
+#    user: "${UID:-1000}:${GID:-1000}"
+    user: "0:0"
     build:
       context: .
       dockerfile: ${DOCKERFILE:-Dockerfile}
@@ -17,7 +19,7 @@ services:
       - REDIS_HOST=redis
     volumes:
       - ${APP_CODE_PATH_HOST:-./}:${APP_CODE_PATH_CONTAINER:-/var/www/html}:${APP_CODE_CONTAINER_FLAG:-cached}
-      - ./storage/logs:/var/www/html/runtime/logs
+      - ./storage/logs:/var/www/html/runtime/logs:rw
       - ./vendor:/var/www/html/vendor:cached
     ports:
       - "${APP_PORT:-9501}:9501"
@@ -26,6 +28,7 @@ services:
       - redis
     command: ${HYPERF_COMMAND:-php bin/hyperf.php start}
     tty: ${TTY_ENABLE:-false}
+
   mysql:
     image: mysql:8.0
     container_name: hyperf_mysql
@@ -36,10 +39,12 @@ services:
       - MYSQL_PASSWORD=${DB_PASSWORD:-secret}
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
     volumes:
-      - ${DATA_PATH_HOST:-./mysql}:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
       - ./docker/mysql/conf.d:/etc/mysql/conf.d
     ports:
       - "${DB_PORT:-3306}:3306"
+
+    user: "${UID:-1000}:${GID:-1000}"
 
   redis:
     image: redis:alpine
@@ -49,3 +54,5 @@ services:
 networks:
   default:
     name: hyperf
+volumes:
+  mysql_data:

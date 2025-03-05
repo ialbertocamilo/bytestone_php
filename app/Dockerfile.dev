@@ -39,6 +39,7 @@ RUN apk update && apk add --no-cache \
     php82-dom \
     php82-pdo_mysql \
     php82-pcntl \
+    redis \
     php82-zip
 
 RUN php --ini
